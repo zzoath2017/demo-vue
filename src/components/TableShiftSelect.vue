@@ -9,9 +9,10 @@
       @cell-click="cellClick"
       style="width: 100%"
     >
-      <el-table-column prop="date" label="日期" width="180"> </el-table-column>
+      <el-table-column v-for="(item,index) in tableColumns" :key="index" :prop="item.prop" :label="item.label" :width="item.width"></el-table-column>
+      <!-- <el-table-column prop="date" label="日期" width="180"> </el-table-column>
       <el-table-column prop="name" label="姓名" width="180"> </el-table-column>
-      <el-table-column prop="address" label="地址"> </el-table-column>
+      <el-table-column prop="address" label="地址"> </el-table-column> -->
     </el-table>
     <ul v-show="visible" class="rightMenu" :style="rightMenuStyle">
       <li>Set value</li>
@@ -30,6 +31,22 @@ export default {
         left: 0,
         top: 0
       },
+      tableColumns:[
+        {
+          prop: "date",
+          label: "日期",
+          width: 180
+        },
+        {
+          prop: "name",
+          label: "姓名",
+          width: 180
+        },
+        {
+          prop: "address",
+          label: "地址"
+        },
+      ],
       tableData: [
         {
           date: "2016-05-02",
@@ -153,6 +170,7 @@ export default {
         this.selectionCell.end = [rowIndex, colIndex];
       } else {
         this.selectionCell.start = [rowIndex, colIndex];
+        this.selectionCell.end = []
       }
       // let classArr = cell.className.split("_");
       // colIndex = Number(classArr[classArr.length - 1]) - 1;
