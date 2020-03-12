@@ -7,16 +7,29 @@
       :highlight-current-row="false"
       @cell-mouse-enter="() => {}"
       @cell-click="cellClick"
+      @cell-dblclick="cellEdit"
       style="width: 100%"
     >
-      <el-table-column v-for="(item,index) in tableColumns" :key="index" :prop="item.prop" :label="item.label" :width="item.width"></el-table-column>
+      <el-table-column
+        v-for="(item, index) in tableColumns"
+        :key="index"
+        :prop="item.prop"
+        :label="item.label"
+        :width="item.width"
+      >
+        <!-- <template slot-scope="scope">
+          <div>
+            <el-input v-model="scope.row[item.prop]"></el-input>
+          </div>
+        </template> -->
+      </el-table-column>
       <!-- <el-table-column prop="date" label="日期" width="180"> </el-table-column>
       <el-table-column prop="name" label="姓名" width="180"> </el-table-column>
       <el-table-column prop="address" label="地址"> </el-table-column> -->
     </el-table>
     <ul v-show="visible" class="rightMenu" :style="rightMenuStyle">
-      <li>Set value</li>
-      <li>Clear value</li>
+      <li @click="setValue('test')">Set value</li>
+      <li @click="setValue(null)">Clear value</li>
     </ul>
   </div>
 </template>
@@ -31,43 +44,76 @@ export default {
         left: 0,
         top: 0
       },
-      tableColumns:[
+      tableColumns: [
         {
-          prop: "date",
-          label: "日期",
+          prop: "product",
+          label: "Product",
           width: 180
         },
         {
-          prop: "name",
-          label: "姓名",
+          prop: "measurement",
+          label: "Measurement",
           width: 180
         },
         {
-          prop: "address",
-          label: "地址"
+          prop: "soft_low",
+          label: "Soft Low"
+        },
+        {
+          prop: "soft_high",
+          label: "Soft High"
+        },
+          {
+            prop: "hard_low",
+            label: "Hard Low"
+          },
+        {
+          prop: "hard_high",
+          label: "Hard High"
         },
       ],
       tableData: [
         {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄"
+          product: "A",
+          measurement: "A1",
+          soft_low: 1,
+          soft_high: 1,
+          hard_low: 1,
+          hard_high: 1,
         },
         {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1517 弄"
+          product: "B",
+          measurement: "B1",
+          soft_low: 1,
+          soft_high: 1,
+          hard_low: 1,
+          hard_high: 1,
         },
         {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1519 弄"
+          product: "C",
+          measurement: "C1",
+          soft_low: 1,
+          soft_high: 1,
+          hard_low: 1,
+          hard_high: 1,
         },
         {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1516 弄"
-        }
+          product: "D",
+          measurement: "D1",
+          soft_low: 1,
+          soft_high: 1,
+          hard_low: 1,
+          hard_high: 1,
+        },
+        {
+          product: "E",
+          measurement: "E1",
+          soft_low: 1,
+          soft_high: 1,
+          hard_low: 1,
+          hard_high: 1,
+        },
+        
       ],
 
       selectionCell: {
@@ -79,22 +125,12 @@ export default {
   computed: {
     cellClassFn() {
       if (this.selectionCell.start.length && this.selectionCell.end.length) {
-        let rowIndexMax = Math.max(
-          this.selectionCell.start[0],
-          this.selectionCell.end[0]
-        );
-        let rowIndexMin = Math.min(
-          this.selectionCell.start[0],
-          this.selectionCell.end[0]
-        );
-        let colIndexMax = Math.max(
-          this.selectionCell.start[1],
-          this.selectionCell.end[1]
-        );
-        let colIndexMin = Math.min(
-          this.selectionCell.start[1],
-          this.selectionCell.end[1]
-        );
+        let {
+          rowIndexMin,
+          rowIndexMax,
+          colIndexMin,
+          colIndexMax
+        } = this.getMinMaxIndex();
 
         console.log(rowIndexMin, rowIndexMax);
         console.log(colIndexMin, colIndexMax);
@@ -131,8 +167,21 @@ export default {
         e.stopPropagation();
       }
       this.visible = true;
+      let bodyHeight = document.body.clientHeight;
+      let bodyWidth = document.body.clientWidth;
+      let rightMenu = document.querySelector(".rightMenu");
+
+      let rightMenuWidth = rightMenu.clientWidth;
+      let rightMenuHeight = rightMenu.clientHeight;
+
       let x = e.clientX,
         y = e.clientY;
+      if (bodyHeight - rightMenuHeight - 15 < y) {
+        y = bodyHeight - rightMenuHeight - 15;
+      }
+      if (bodyWidth - rightMenuWidth - 15 < x) {
+        x = bodyWidth - rightMenuWidth - 15;
+      }
       this.rightMenuStyle = {
         left: x + "px",
         top: y + "px"
@@ -166,28 +215,97 @@ export default {
           break;
         }
       }
+      if(colIndex<2){
+        this.selectionCell.start = []
+        return;
+      }
       if (e.shiftKey) {
         this.selectionCell.end = [rowIndex, colIndex];
       } else {
         this.selectionCell.start = [rowIndex, colIndex];
-        this.selectionCell.end = []
+        this.selectionCell.end = [];
       }
       // let classArr = cell.className.split("_");
       // colIndex = Number(classArr[classArr.length - 1]) - 1;
       console.log(rowIndex, colIndex);
       // console.log()
+    },
+    getMinMaxIndex() {
+      let rowIndexMax = Math.max(
+        this.selectionCell.start[0],
+        this.selectionCell.end[0]
+      );
+      let rowIndexMin = Math.min(
+        this.selectionCell.start[0],
+        this.selectionCell.end[0]
+      );
+      let colIndexMax = Math.max(
+        this.selectionCell.start[1],
+        this.selectionCell.end[1]
+      );
+      let colIndexMin = Math.min(
+        this.selectionCell.start[1],
+        this.selectionCell.end[1]
+      );
+      return { rowIndexMin, rowIndexMax, colIndexMin, colIndexMax };
+    },
+    setValue(val) {
+      // debugger
+      if (this.selectionCell.start.length && this.selectionCell.end.length) {
+        let {
+          rowIndexMin,
+          rowIndexMax,
+          colIndexMin,
+          colIndexMax
+        } = this.getMinMaxIndex();
+        let data = this.tableData;
+        let dataColumns = this.tableColumns;
+        let colArr = [];
+        for (let i = colIndexMin; i <= colIndexMax; i++) {
+          colArr.push(dataColumns[i].prop);
+        }
+        // debugger
+        let newData = data.map((item, index) => {
+          if (index >= rowIndexMin && index <= rowIndexMax) {
+            colArr.forEach(el => {
+              item[el] = val;
+            });
+            return item;
+          } else {
+            return item;
+          }
+        });
+        this.tableData = newData;
+        this.visible = false;
+        this.selectionCell.end = [];
+      }
+    },
+    cellEdit(row, column, cell, event) {
+      console.log(row, column, cell, event);
+      // if (column.prop != "product" && column.prop != "measurement") {
+      // event.target.innerHTML = "";
+      // let cellInput = document.createElement("input");
+      // cellInput.value = "";
+      // cellInput.setAttribute("type", "text");
+      // cellInput.style.width = "80%";
+      // cell.appendChild(cellInput);
+      // cellInput.onblur = function() {
+      //   cell.removeChild(cellInput);
+      //   event.target.innerHTML = cellInput.value;
+      // };
+      // }
     }
   }
 };
 </script>
 <style lang="scss">
 .TableShiftSelect {
- .el-table--enable-row-hover .el-table__body tr:hover>td.my-active {
-   background-color: rgba(74, 149, 235, 0.2);
- }
- .el-table--enable-row-hover .el-table__body tr:hover>td {
-   background-color: #fff;
- }
+  .el-table--enable-row-hover .el-table__body tr:hover > td.my-active {
+    background-color: rgba(74, 149, 235, 0.2);
+  }
+  .el-table--enable-row-hover .el-table__body tr:hover > td {
+    background-color: #fff;
+  }
   user-select: none;
   .rightMenu {
     list-style: none;
